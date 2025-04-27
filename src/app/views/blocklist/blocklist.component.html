@@ -1,0 +1,31 @@
+<div>
+  <p-table [value]="blockListItems">
+    <ng-template #caption>
+      <div class="flex items-center justify-between">
+          <span class="text-xl font-bold">Block</span>
+      </div>
+    </ng-template>
+    <ng-template #header>
+        <tr>
+            <th>IPv4</th>
+            <th>IPv6</th>
+            <th>Hostname</th>
+            <th>Country</th>
+            <th>Categories</th>
+            <th>Actions</th>
+        </tr>
+    </ng-template>
+    <ng-template #body let-blockListItem>
+        <tr>
+            <td>{{ blockListItem.ipv4 }}</td>
+            <td>{{ blockListItem.ipv6 }}</td>
+            <td>{{ blockListItem.hostname }}</td>
+            <td>{{ blockListItem.country }}</td>
+            <td>
+              <p-chip *ngFor="let category of blockListItem.categories">{{category}}</p-chip>
+            </td>
+            <td>{{blockListItem.id}}</td>
+        </tr>
+    </ng-template>
+</p-table>
+</div>

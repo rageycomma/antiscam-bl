@@ -1,0 +1,59 @@
+<div class="mx-auto p-5">
+  <div class="mb-5">
+    <p-message severity="info">
+      <b>Note:</b>&nbsp;If you are a scambaiter, you can apply to be verified via the GitHub repository so you can add IPs/DNS/Phone Numbers immediately. Otherwise if you are not verified
+      your request will need to be approved and may take some time.
+    </p-message>
+  </div>
+
+  <form [formGroup]="addToBlocklistForm">
+
+
+    <div class="mb-5">
+      <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+      <input pInputText formControlName="name" type="text" id="name" class="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-xs-light" placeholder="XYZ Industries Fake Company Name" required />
+    </div>
+
+    <div class="flex flex-wrap gap-4 mb-5">
+        <div class="flex items-center gap-2">
+            <p-radiobutton formControlName="ipVersion" value="4" />
+            <label for="size_large" class="text-lg">IPv4</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-radiobutton formControlName="ipVersion" value="6" />
+          <label for="size_large" class="text-lg">IPv6</label>
+      </div>
+    </div>
+
+    <div class="mb-5" *ngIf="ipVersion.value == '4'">
+      <label for="ipv4-address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IPv4 Address</label>
+      <input pInputText type="text" formControlName="ipv4" id="ipv4-address" [class]="{ 'shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-xs-light': true }" className="w-full"  placeholder="x.x.x.x" required />
+      <p-button severity="secondary" (onClick)="onLookupIPv4()" class="ml-2">Lookup IP address</p-button>
+    </div>
+
+    <div class="mb-5" *ngIf="ipVersion.value == '6'">
+      <label for="ipv6-address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IPv6 Address</label>
+      <input pInputText type="text" formControlName="ipv6" id="password" placeholder="x:x:x:x:x:x:x:x" required />
+      <p-button severity="secondary" (onClick)="onLookupIPv6()" class="ml-2">Lookup IP address</p-button>
+    </div>
+
+    <div class="mb-5" *ngIf="ipResult !== null">
+      IP address is based in <b>{{ipResult?.city}}, {{ ipResult?.country }}</b>, provided by {{ipResult?.isp}} ({{ipResult?.org}} as {{ipResult?.as}})
+    </div>
+
+    <div class="mb-5">
+      <label for="initial-note" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Summary of evidence which is included</label>
+      <textarea pTextarea id="initial-note" formControlName="initialNote" class="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-xs-light" required> </textarea>
+    </div>
+
+
+    <div class="mb-5">
+      <label for="categories" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categories</label>
+      <p-multiselect [options]="displayCategories" id="categories" formControlName="categories" optionLabel="name" placeholder="Select Cities" [maxSelectedLabels]="3" styleClass="w-full" />
+    </div>
+    V4 {{ipv4.valid }}<br />
+    V6 {{ipv6.valid }}<br />
+
+    <p-button [disabled]="addToBlocklistForm.invalid || !ipResult" (onClick)="doAddItem()">Add item to blocklist</p-button>
+  </form>
+</div>
