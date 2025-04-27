@@ -1,45 +1,64 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment.development';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, of, ReplaySubject } from 'rxjs';
 import { IBlocklistItem } from '../interfaces/IBlocklistItem';
+import { GitService } from './git.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BlocklistService {
-  /**
-   * URL template used to reference URLs which include JSON content.
-   */
-  private static URL_TEMPLATE = 'https://raw.githubusercontent.com/$OWNER/$REPO/refs/heads/$BRANCH_NAME/IPBLOCKLIST.json'
 
   /**
-   * Generates a raw file URL for a given branch.
-   * @param branchName Git branch name
-   * @returns URL for raw content for a given branch.
+   * When the init completes, tell everything it's ready to go.
    */
-  private generateRawURLForBranch(branchName: string) {
-    return BlocklistService.URL_TEMPLATE
-      .replace('$OWNER', environment.REPO_OWNER)
-      .replace('$REPO', environment.REPO_NAME)
-      .replace('$BRANCH_NAME', branchName);
-  }
+  public onInitCompleted: ReplaySubject<boolean> = new ReplaySubject<boolean>();
 
   /**
-   * Gets a blocklist from a given branch so its summary and other info
-   * can be generated from it.
-   * @param branchName Git branch name
+   * The DNS blocklist.
    */
-  public getBlocklistForBranch(branchName: string): Promise<Array<IBlocklistItem>> {
+  private ipDnsBlocklist: Array<IBlocklistItem> = [];
+
+  /**
+   * Gets the IP blocklist once loaded
+   * @returns
+   */
+  public getIPBlocklist() {
     return firstValueFrom(
-      this.HttpClient.get<Array<IBlocklistItem>>(
-        this.generateRawURLForBranch(branchName),
-        {
-          responseType: 'json'
-        }
+      this.onInitCompleted.pipe(
+        map(() => {
+          return of(this.ipDnsBlocklist)
+        })
       )
-    );
+    )
   }
 
-  constructor(private readonly HttpClient: HttpClient) { }
+  /**
+   * Initialises the git repo and gets the blocklist file.
+   */
+  private async initGitRepo() {
+    // Clone the repo and get the contents locally
+    await this.GitService.cloneRepo();
+
+    // Gets the blocklist file as string.
+    const blocklistFile = (await this.GitService.getGitFile('/blocklist/blocklist/DNS/blocklist.json')).toString();
+    this.ipDnsBlocklist = JSON.parse(blocklistFile);
+
+    // When the init completes, tell subscribers that's the case so they know when
+    // the contents of the blocklist can be/are updated
+    this.onInitCompleted.next(true);
+  }
+
+  private init() {
+    (async () => {
+      await this.initGitRepo();
+    })().then(() => {}).catch((err) => {});
+  }
+
+  /**
+   * Creates a new instance of the GitService.
+   * @param GitService
+   */
+  constructor(private readonly GitService: GitService) {
+    this.init();
+  }
 }

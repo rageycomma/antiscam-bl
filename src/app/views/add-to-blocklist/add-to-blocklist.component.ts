@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { GithubService } from '../../services/github.service';
 import { v4 as uuidv4 } from 'uuid';
 import { GitService } from '../../services/git.service';
+import { BlocklistService } from '../../services/blocklist.service';
 
 @Component({
   selector: 'app-add-to-blocklist',
@@ -105,7 +106,7 @@ export class AddToBlocklistComponent {
       date_modified: currDate,
     };
 
-    await this.GitService.cloneRepo();
+    const blockylist = await this.BlocklistService.getIPBlocklist();
 
   }
 
@@ -116,7 +117,7 @@ export class AddToBlocklistComponent {
   constructor(
     private readonly IpApiService: IpApiService,
     private readonly GithubService: GithubService,
-    private readonly GitService: GitService
+    private readonly BlocklistService: BlocklistService
   ) {
     this.ipv4.addValidators(Validators.required);
 

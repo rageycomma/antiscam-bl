@@ -29,7 +29,17 @@ export class GitService {
       dir: '/blocklist',
       fs: this.LightningFSInst,
       url: `https://github.com/${environment.REPO_OWNER}/${environment.REPO_NAME}`,
+      corsProxy: 'https://proxy.corsfix.com/?',
     })
+  }
+
+  public listFiles(dir: string) {
+    return this.LightningFSInst.promises.readdir(dir);
+  }
+
+
+  public getGitFile(filePath: string) {
+    return this.LightningFSInst.promises.readFile(filePath);
   }
 
   constructor() {

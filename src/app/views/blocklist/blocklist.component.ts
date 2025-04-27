@@ -23,7 +23,7 @@ export class BlocklistComponent implements OnInit {
    * @returns
    */
   async ngOnInit() {
-    this.blockListItems = await this.BlockListService.getBlocklistForBranch('main');
+    this.blockListItems = [];
   }
 
   /**
