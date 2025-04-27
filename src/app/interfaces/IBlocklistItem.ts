@@ -15,7 +15,7 @@ export interface IBlocklistItemNote {
 export interface IBlocklistItem {
   id: string;
   ipv4: string;
-  ipv6: string;
+  ipv6?: string;
   hostname: string;
   isp_name: string;
   country: string;

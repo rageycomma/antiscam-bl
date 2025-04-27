@@ -33,8 +33,28 @@ export class GitService {
     })
   }
 
+  /**
+   * Lists files in the git repository directory.
+   * @param dir
+   * @returns
+   */
   public listFiles(dir: string) {
     return this.LightningFSInst.promises.readdir(dir);
+  }
+
+  public createFolders(paths: Array<string>) {
+    return Promise.allSettled(
+      paths.map(path => this.LightningFSInst.promises.mkdir(path))
+    )
+  }
+
+  /**
+   * Does the file exist in the git repository?
+   * @param filePath
+   * @returns
+   */
+  public gitFileExists(filePath: string) {
+    return this.LightningFSInst.promises.stat(filePath);
   }
 
 

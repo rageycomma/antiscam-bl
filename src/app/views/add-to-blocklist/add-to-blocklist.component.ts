@@ -13,6 +13,7 @@ import { GithubService } from '../../services/github.service';
 import { v4 as uuidv4 } from 'uuid';
 import { GitService } from '../../services/git.service';
 import { BlocklistService } from '../../services/blocklist.service';
+import { IBlocklistItem } from '../../interfaces/IBlocklistItem';
 
 @Component({
   selector: 'app-add-to-blocklist',
@@ -93,10 +94,10 @@ export class AddToBlocklistComponent {
     const user = this.GithubService.loggedInUser;
     const currDate = new Date().toISOString();
 
-    const constructedObject = {
+    const constructedObject: IBlocklistItem = {
       id: uuidv4(),
       evidence: [],
-      added_by_gh_user: user?.html_url,
+      added_by_gh_user: user?.html_url ?? '',
       ipv4: this.ipv4.value,
       lat: this.ipResult?.lat,
       lon: this.ipResult?.lon,
@@ -104,10 +105,14 @@ export class AddToBlocklistComponent {
       categories: this.categories.value.map((cat: any) => cat.value),
       date_added: currDate,
       date_modified: currDate,
+      hostname: '',
+      isp_name: '',
+      country: '',
+      approved_by_gh_user: '',
+      approval_message: ''
     };
 
-    const blockylist = await this.BlocklistService.getIPBlocklist();
-
+    await this.BlocklistService.addItemToBlocklist(constructedObject);
   }
 
   /**

@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { firstValueFrom, map, of, ReplaySubject } from 'rxjs';
 import { IBlocklistItem } from '../interfaces/IBlocklistItem';
 import { GitService } from './git.service';
 
@@ -9,27 +8,40 @@ import { GitService } from './git.service';
 export class BlocklistService {
 
   /**
-   * When the init completes, tell everything it's ready to go.
-   */
-  public onInitCompleted: ReplaySubject<boolean> = new ReplaySubject<boolean>();
-
-  /**
    * The DNS blocklist.
    */
-  private ipDnsBlocklist: Array<IBlocklistItem> = [];
+  public ipDnsBlocklist: Array<IBlocklistItem> = [];
+
+  private createNestedFolderList(prefix: string, ipText: string, ipVersion: 'ipv4' | 'ipv6') {
+    const split = ipVersion === 'ipv4' ? '.' : ':';
+    const splitByVer = ipText.split(split);
+    const totalSplits = splitByVer.length;
+    return new Array(splitByVer.length).fill(splitByVer)
+      .reduce((iter, frag, idx) => {
+        iter.push(
+          `${prefix}${frag.slice(0, totalSplits - idx).join(split)}`
+        );
+        return iter;
+      }, []);
+  }
 
   /**
-   * Gets the IP blocklist once loaded
-   * @returns
+   * Ensures that an IP blocklist exists and is partitioned.
+   * @param ipVersion
+   * @param ipAddress
    */
-  public getIPBlocklist() {
-    return firstValueFrom(
-      this.onInitCompleted.pipe(
-        map(() => {
-          return of(this.ipDnsBlocklist)
-        })
-      )
-    )
+  private async ensureIPPartition(ipAddress: string, ipVersion: 'ipv4' | 'ipv6' = 'ipv4') {
+    const allPathsToEnsure = this.createNestedFolderList(`/blocklist/blocklist/DNS/${ipVersion}/`, ipAddress, ipVersion);
+    const folderResult = await this.GitService.createFolders(allPathsToEnsure);
+
+    const x = 'g';
+  }
+
+  public async addItemToBlocklist(item: IBlocklistItem) {
+    const ipv4Paths = !item.ipv4 ? [] : this.ensureIPPartition(item.ipv4, 'ipv4');
+    const ipv6Paths = !item.ipv6 ? [] : this.ensureIPPartition(item.ipv6, 'ipv6');
+    const x = 'g';
+
   }
 
   /**
@@ -42,10 +54,6 @@ export class BlocklistService {
     // Gets the blocklist file as string.
     const blocklistFile = (await this.GitService.getGitFile('/blocklist/blocklist/DNS/blocklist.json')).toString();
     this.ipDnsBlocklist = JSON.parse(blocklistFile);
-
-    // When the init completes, tell subscribers that's the case so they know when
-    // the contents of the blocklist can be/are updated
-    this.onInitCompleted.next(true);
   }
 
   private init() {
