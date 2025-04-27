@@ -29,7 +29,6 @@ export class GitService {
       dir: '/blocklist',
       fs: this.LightningFSInst,
       url: `https://github.com/${environment.REPO_OWNER}/${environment.REPO_NAME}`,
-      corsProxy: 'https://cors-proxy.htmldriven.com/?url='
     })
   }
 
