@@ -5,6 +5,9 @@ import { lastValueFrom } from 'rxjs';
 import { Octokit } from '@octokit/core';
 import { Endpoints } from '@octokit/types';
 
+import {
+  createPullRequest,
+} from "octokit-plugin-create-pull-request";
 @Injectable({
   providedIn: 'root'
 })
@@ -39,25 +42,28 @@ export class GithubService {
   }
 
   /**
-   * Sets the access token.
+   * Gets the access token.
    * @param code
    * @returns
    */
   private getAccessTokenForCode(code: string) {
-    return lastValueFrom(this.HttpClient.post<{ access_token: string; }>('https://github.com/login/oauth/access_token', null, {
+    return lastValueFrom(this.HttpClient.post<{ access_token: string; }>('https://proxy.corsfix.com/?https://github.com/login/oauth/access_token', null, {
       params: new HttpParams()
         .set('client_id', environment.CLIENT_ID)
         .set('client_secret', environment.CLIENT_SECRET)
         .set('code', code),
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'X-OAuth-Scopes': 'repo, user'
       }
     }));
   }
 
   private initOctoKit() {
-    this.OctoKitInst ??= new Octokit({
-      auth: this.accessToken,
+    const OctoKitExtended = Octokit.plugin(createPullRequest)
+
+    this.OctoKitInst ??= new OctoKitExtended({
+      auth: environment.USER_FINE_GRAINED_TOKEN,
     })
   }
 
@@ -74,6 +80,7 @@ export class GithubService {
    * Populates the logged in user in localStorage.
    */
   public async populateLoggedInUser() {
+    this.initOctoKit();
     const loggedInUser = await this.getLoggedInUser();
     localStorage.setItem('ABL_CURRENT_USER', JSON.stringify(loggedInUser));
   }
@@ -117,10 +124,69 @@ export class GithubService {
     })
   }
 
+  /**
+   * Creates a pull request!
+   * @param title
+   * @param desc
+   * @param commitText
+   * @param changes
+   * @returns
+   */
+  public async createPullRequest(
+    title: string,
+    desc: string,
+    prBranch: string,
+    changes: Array<any>
+  ) {
+    this.initOctoKit();
+    return this.OctoKitInst.createPullRequest({
+      owner: environment.REPO_OWNER,
+      repo: environment.REPO_NAME,
+      title,
+      head: prBranch,
+      body: desc,
+      update: false,
+      forceFork: true,
+      changes
+    })
+  }
+
+  public async isUserCollaborator(username: string) {
+    this.initOctoKit();
+    return this.OctoKitInst.request('GET /repos/{owner}/{repo}/collaborators/{username}/permission', {
+      owner: environment.REPO_OWNER,
+      repo: environment.REPO_NAME,
+      username,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    })
+  }
+
+  public async amICollaborator() {
+    this.initOctoKit();
+    const me = await this.OctoKitInst.request('GET /user');
+    return this.isUserCollaborator(me.data?.login);
+  }
+
+  public async mergePullRequest(prId: number) {
+    const me = await this.OctoKitInst.request('GET /user');
+    return this.OctoKitInst.request('PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge', {
+      owner: environment.REPO_OWNER,
+      repo: environment.REPO_NAME,
+      pull_number: prId,
+      commit_title: `PR Merged by ${me.data.login}`,
+      commit_message: `PR Merged by ${me.data.login}`
+    });
+  }
+
+
 
   /**
    * Creates a new instance of the github login service.
    * @param HttpClient
    */
-  constructor(private readonly HttpClient: HttpClient) {}
+  constructor(private readonly HttpClient: HttpClient) {
+
+  }
 }

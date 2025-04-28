@@ -11,7 +11,6 @@ import { IpApiService } from '../../services/ip-api.service';
 import { CommonModule } from '@angular/common';
 import { GithubService } from '../../services/github.service';
 import { v4 as uuidv4 } from 'uuid';
-import { GitService } from '../../services/git.service';
 import { BlocklistService } from '../../services/blocklist.service';
 import { IBlocklistItem } from '../../interfaces/IBlocklistItem';
 
@@ -98,7 +97,8 @@ export class AddToBlocklistComponent {
       id: uuidv4(),
       evidence: [],
       added_by_gh_user: user?.html_url ?? '',
-      ipv4: this.ipv4.value,
+      ipv4: this.ipv4.value ?? null,
+      ipv6: this.ipv6.value ?? null,
       lat: this.ipResult?.lat,
       lon: this.ipResult?.lon,
       notes: [],
@@ -129,8 +129,12 @@ export class AddToBlocklistComponent {
     this.ipVersion.events.subscribe((voof: any) => {
         if (voof.source.value === '6') {
           this.ipv4.setValidators([]);
+          this.ipv4.setValue(null);
+          this.ipv6.setValidators(Validators.required)
         } else {
           this.ipv6.setValidators([]);
+          this.ipv6.setValue(null);
+          this.ipv4.setValidators(Validators.required)
         }
     });
   }

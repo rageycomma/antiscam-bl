@@ -3,6 +3,7 @@ import git from 'isomorphic-git';
 import LightningFS from '@isomorphic-git/lightning-fs';
 import http from 'isomorphic-git/http/web';
 import { environment } from '../../environments/environment.development';
+import { GithubService } from './github.service';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +31,39 @@ export class GitService {
       fs: this.LightningFSInst,
       url: `https://github.com/${environment.REPO_OWNER}/${environment.REPO_NAME}`,
       corsProxy: 'https://proxy.corsfix.com/?',
+    });
+  }
+
+  /**
+   * Creates a git branch for the PR.
+   */
+  public createBranch(branchName: string) {
+    return git.branch({
+      fs: this.LightningFSInst,
+      dir: '/blocklist',
+      ref: branchName,
+    });
+  }
+
+  public checkoutBranch(branchName: string) {
+    return git.checkout({
+      fs: this.LightningFSInst,
+      dir: '/blocklist',
+      ref: branchName
+    });
+  }
+
+  /**
+   * Pushes changes on current branch.
+   */
+  public pushBranch() {
+    return git.push({
+      http,
+      fs: this.LightningFSInst,
+      dir: '/blocklist',
+      url: `https://github.com/${environment.REPO_OWNER}/${environment.REPO_NAME}`,
+      corsProxy: 'https://proxy.corsfix.com/?',
+      onAuth: () => ({ username: this.GithubService.loggedInUser?.login, password: this.GithubService.accessToken })
     })
   }
 
@@ -49,6 +83,16 @@ export class GitService {
   }
 
   /**
+   * Puts a file into the LightningFS instance.
+   * @param path
+   * @param contents
+   * @returns
+   */
+  public putGitFile(path: string, contents: string) {
+    return this.LightningFSInst.promises.writeFile(path, contents);
+  }
+
+  /**
    * Does the file exist in the git repository?
    * @param filePath
    * @returns
@@ -57,12 +101,11 @@ export class GitService {
     return this.LightningFSInst.promises.stat(filePath);
   }
 
-
   public getGitFile(filePath: string) {
     return this.LightningFSInst.promises.readFile(filePath);
   }
 
-  constructor() {
+  constructor(private readonly GithubService: GithubService) {
     this.LightningFSInst = new LightningFS('fs');
   }
 }
