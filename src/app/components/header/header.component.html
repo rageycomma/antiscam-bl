@@ -1,23 +1,66 @@
 
 <p-menubar [model]="HeaderItems">
   <ng-template #start>
-    <span class="mx-auto text-2xl mr-20">AntiScamBL</span>
+    <span class="mx-auto text-2xl mr-20">
+      <a [routerLink]="['']"><img src="/logo.png" class="h-10"/></a>
+    </span>
+    <ng-template #item let-item>
+      <p-button [routerLink]="item.routerLink" variant="text">
+        <ng-icon [name]="item.icon" /> {{item.label}}
+      </p-button>
+    </ng-template>
   </ng-template>
   <ng-template #end>
-      <div *ngIf="IsLoggedIn; else notLoggedIn">
-        Logged in as <b>{{LoggedInUser?.name}} (GitHub)</b> 
+    <p-button variant="text" class="flex flex-row items-center gap-2">
+      <div class="flex flex-row gap-4" *ngIf="IsLoggedIn; else notLoggedIn">
+        <p-avatar [image]="LoggedInUser?.avatar_url" shape="circle" />
+        <div class="text-lg">
+          <div class="flex flex-row gap-2">
+            <div *ngIf="amIStaff" class="pt-1">
+              <ng-icon name="remixUserStarFill" class="text-2xl" />
+            </div>
+            <div>{{LoggedInUser?.login ?? 'NoNameChump' }}</div> 
+          </div>
+        </div>
       </div>
-
-      <ng-template #item let-item>
-        <p-button [routerLink]="item.routerLink" variant="outlined">
-          <ng-icon [name]="item.icon" /> {{item.label}}
-        </p-button>
-      </ng-template>
-
       <ng-template #notLoggedIn>
         <div class="flex items-center gap-2">
-            <a [href]="GitHubLoginURL">Login to GitHub</a>
+            <p-button (click)="showDialog()">Login to GitHub</p-button>
         </div>
       </ng-template>
+
+    </p-button>
   </ng-template>
 </p-menubar>
+
+<p-dialog header="Provide GitHub Login token" [modal]="true" [(visible)]="showAccessTokenInput" class="w-20">
+
+  <div class="flex flex-row p-text-secondary block mb-8 text-md">
+
+    <div class="flex flex-col text-md text-center text-itali">
+      <img src="/aec5297e-4b84-479e-8b21-3de44212f708.jpg" class="w-72" />
+      This sucks, sorry! Blame GitHub!
+    </div>
+    <div class="flex flex-col">
+      <ol type="a" class="flex flex-col gap-5 text-lg">
+        <li>0. Clone this repository (Click <b><a [href]="GitHubRepoLink" class="text-bold" target="_blank">HERE</a></b>)</li>
+        <li>1. Open the page to create a new access key (Click <b><a href="https://github.com/settings/personal-access-tokens/new" class="text-bold" target="_blank">HERE</a></b>) </li>
+        <li>2. Choose whatever expiry you like -- the shorter, better for security.</li>
+        <li>3. Select "Only select repositories" and select the repository you cloned (yourusername/{{repoName}})</li>
+        <li>4. In "permissions", select: Read and Write access to administration and pull requests.</li>
+        <li>5. You will receive an access code so this app can access that fork and nothing else, put that in the "fine-grained access token" below.</li>
+      </ol>
+      <div class="gap-4 mt-5 mb-5 w-full">
+        <form [formGroup]="accessTokenForm">
+          <div class="mb-5">
+            <label for="ipv6-address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fine-grained access token</label>
+            <input pInputText type="text" formControlName="accessToken" id="accessToken" placeholder="github_pat_xxxxx" class="w-full" required />
+          </div>
+        </form>
+      </div>
+      <div class="flex flex-row justify-end">
+        <p-button (click)="saveAccessToken()" [disabled]="!accessTokenForm.valid">Save</p-button>
+      </div>
+    </div>
+  </div>
+</p-dialog>

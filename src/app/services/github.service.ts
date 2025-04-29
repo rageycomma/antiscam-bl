@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment.development';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Observable, ReplaySubject, Subject } from 'rxjs';
 import { Octokit } from '@octokit/core';
 import { Endpoints } from '@octokit/types';
 
@@ -15,6 +15,12 @@ export class GithubService {
 
   private OctoKitInst: any;
 
+
+  /**
+   * When the user has signed in to github, do stuff.
+   */
+  private onUserGitHubSignIn$: ReplaySubject<boolean> = new ReplaySubject<boolean>();
+
   /**
    * Gets the access token we retrieved from GitHub.
    */
@@ -27,43 +33,25 @@ export class GithubService {
    */
   public get loggedInUser(): Endpoints["GET /user"]["response"]["data"] | null {
     const user = localStorage.getItem('ABL_CURRENT_USER');
-
-    let parsedUser = null;
-
-    if (user === null) return null;
-
-    try {
-      parsedUser = JSON.parse(user);
-    } catch {
-      return null;
-    }
-
-    return parsedUser
+    return user === null ? null : JSON.parse(user);
   }
 
   /**
-   * Gets the access token.
-   * @param code
+   * Listen to when the user has signed in to github.
    * @returns
    */
-  private getAccessTokenForCode(code: string) {
-    return lastValueFrom(this.HttpClient.post<{ access_token: string; }>('https://proxy.corsfix.com/?https://github.com/login/oauth/access_token', null, {
-      params: new HttpParams()
-        .set('client_id', environment.CLIENT_ID)
-        .set('client_secret', environment.CLIENT_SECRET)
-        .set('code', code),
-      headers: {
-        Accept: 'application/json',
-        'X-OAuth-Scopes': 'repo, user'
-      }
-    }));
+  public onUserGitHubSignIn() {
+    return this.onUserGitHubSignIn$;
   }
 
+  /**
+   * Inits auth.
+   */
   private initOctoKit() {
     const OctoKitExtended = Octokit.plugin(createPullRequest)
 
     this.OctoKitInst ??= new OctoKitExtended({
-      auth: environment.USER_FINE_GRAINED_TOKEN,
+      auth: localStorage.getItem('USER_FINE_GRAINED_TOKEN') as string,
     })
   }
 
@@ -79,10 +67,23 @@ export class GithubService {
   /**
    * Populates the logged in user in localStorage.
    */
-  public async populateLoggedInUser() {
+  public async setFineGrainedToken(fineGrainedLoginToken: string): Promise<Endpoints["GET /user"]["response"]["data"]> {
+    const loginToken: string | null = localStorage.getItem('USER_FINE_GRAINED_TOKEN');
+
+    // If no token exists then we need to populate it.
+    if (loginToken === null) {
+      localStorage.setItem('USER_FINE_GRAINED_TOKEN', fineGrainedLoginToken);
+    }
+
+    // Then get octoKit with that token so we can do our thing.
     this.initOctoKit();
+
+    // Then get the logged in user.
     const loggedInUser = await this.getLoggedInUser();
+
+    // Then populate the user.
     localStorage.setItem('ABL_CURRENT_USER', JSON.stringify(loggedInUser));
+    return loggedInUser;
   }
 
   /**
@@ -90,8 +91,7 @@ export class GithubService {
    * @param code
    */
   public async setAccessToken(code: string) {
-    const accessToken = await this.getAccessTokenForCode(code);
-    localStorage.setItem('ABL_GITHUB_ACCESS_TOKEN', accessToken.access_token);
+    localStorage.setItem('ABL_GITHUB_ACCESS_TOKEN', code);
     this.initOctoKit();
   }
 
@@ -163,12 +163,21 @@ export class GithubService {
     })
   }
 
+  /**
+   * Checks if the user provided is a collaborator for the Git repo used for this blocklist.
+   * @returns
+   */
   public async amICollaborator() {
     this.initOctoKit();
     const me = await this.OctoKitInst.request('GET /user');
     return this.isUserCollaborator(me.data?.login);
   }
 
+  /**
+   * Merges a PR.
+   * @param prId
+   * @returns
+   */
   public async mergePullRequest(prId: number) {
     const me = await this.OctoKitInst.request('GET /user');
     return this.OctoKitInst.request('PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge', {

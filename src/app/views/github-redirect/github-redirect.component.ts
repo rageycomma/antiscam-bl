@@ -13,18 +13,12 @@ export class GithubRedirectComponent implements OnInit {
   public GitHubToken!: string;
 
   async ngOnInit() {
-    // Sets the auth so we can octowhateveritscalled
-    await this.GithubService.setAccessToken(this.GitHubToken);
-
-    // Store logged in user in localStorage.
-    await this.GithubService.populateLoggedInUser();
-    this.Router.navigate(['/'])
+    this.Router.navigate(['/']) // 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
   }
 
   constructor(
     private readonly Router: Router,
     private readonly Route: ActivatedRoute,
-    private GithubService: GithubService
   ) {
     this.Route.queryParams.subscribe((param: any) => {
       this.GitHubToken = param.code;

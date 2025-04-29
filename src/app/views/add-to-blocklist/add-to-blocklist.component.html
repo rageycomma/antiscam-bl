@@ -49,11 +49,13 @@
 
     <div class="mb-5">
       <label for="categories" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categories</label>
-      <p-multiselect [options]="displayCategories" id="categories" formControlName="categories" optionLabel="name" placeholder="Select Cities" [maxSelectedLabels]="3" styleClass="w-full" />
+      <p-multiselect [options]="displayCategories" id="categories" formControlName="categories" optionLabel="name" placeholder="Select categories" [maxSelectedLabels]="3" styleClass="w-full" />
     </div>
-    V4 {{ipv4.valid }}<br />
-    V6 {{ipv6.valid }}<br />
 
-    <p-button [disabled]="addToBlocklistForm.invalid || !ipResult" (onClick)="doAddItem()">Add item to blocklist</p-button>
+    <div class="flex flex-row justify-end">
+      <p-progress-spinner *ngIf="isLoading" strokeWidth="3" fill="transparent" animationDuration="5s" [style]="{ width: '50px', height: '50px' }" />
+      <p-button [disabled]="addToBlocklistForm.invalid || !ipResult || isLoading" (onClick)="doAddItem()">Add item to blocklist</p-button>
+    </div>
+
   </form>
 </div>

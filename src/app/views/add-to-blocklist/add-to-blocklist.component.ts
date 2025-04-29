@@ -13,10 +13,12 @@ import { GithubService } from '../../services/github.service';
 import { v4 as uuidv4 } from 'uuid';
 import { BlocklistService } from '../../services/blocklist.service';
 import { IBlocklistItem } from '../../interfaces/IBlocklistItem';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-add-to-blocklist',
-  imports: [InputTextModule, FluidModule, TextareaModule, MessageModule, ReactiveFormsModule, MultiSelectModule, ButtonModule, CommonModule, RadioButtonModule],
+  imports: [InputTextModule, FluidModule, TextareaModule, MessageModule, ReactiveFormsModule, MultiSelectModule, ButtonModule, CommonModule, RadioButtonModule, ProgressSpinnerModule],
   templateUrl: './add-to-blocklist.component.html',
   styleUrl: './add-to-blocklist.component.scss'
 })
@@ -28,13 +30,14 @@ export class AddToBlocklistComponent {
   public ipResult: any | null = null;
 
   public name: FormControl = new FormControl(null, [Validators.required, Validators.minLength(1)]);
-  public categories: FormControl = new FormControl([], [Validators.minLength(1)]);
+  public categories: FormControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
   public ipVersion: FormControl = new FormControl(4);
   public ipv4: FormControl = new FormControl(null);
   public ipv6: FormControl = new FormControl(null);
   public lat: FormControl = new FormControl(null);
   public lon: FormControl = new FormControl(null);
   public initialNote: FormControl = new FormControl(null);
+  public isLoading: boolean | null = null;
 
   /**
    * The type of scam that is being performed.
@@ -90,6 +93,7 @@ export class AddToBlocklistComponent {
    * Adds an item and then preps a PR for the item a person has added.
    */
   public async doAddItem() {
+    this.isLoading = true;
     const user = this.GithubService.loggedInUser;
     const currDate = new Date().toISOString();
 
@@ -113,6 +117,9 @@ export class AddToBlocklistComponent {
     };
 
     await this.BlocklistService.addItemToBlocklist(constructedObject);
+    this.isLoading = false;
+    this.Router.navigate(['addition-list']);
+
   }
 
   /**
@@ -120,6 +127,7 @@ export class AddToBlocklistComponent {
    * @param IpApiService
    */
   constructor(
+    private readonly Router: Router,
     private readonly IpApiService: IpApiService,
     private readonly GithubService: GithubService,
     private readonly BlocklistService: BlocklistService
