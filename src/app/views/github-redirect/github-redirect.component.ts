@@ -13,7 +13,7 @@ export class GithubRedirectComponent implements OnInit {
   public GitHubToken!: string;
 
   async ngOnInit() {
-    this.Router.navigate(['/']) // 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
+    this.Router.navigate(['/'])
   }
 
   constructor(
