@@ -25,13 +25,13 @@ jobs:
 
       - name: Build
         id: runbuild
-        run: npm run build
+        run: ng build --base-href /antiscam-bl/ --output-path gh-pages
 
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/antiscam-blocklist
+          path: gh-pages/browser
 
   deploy:
     needs: build
