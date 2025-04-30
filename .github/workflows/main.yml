@@ -25,7 +25,7 @@ jobs:
 
       - name: Build
         id: runbuild
-        run: npm run build --base-href /antiscam-bl/ --output-path gh-pages
+        run: npm run build:gh-pages
 
       - name: Upload static files as artifact
         id: deployment
